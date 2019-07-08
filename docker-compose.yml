@@ -1,0 +1,50 @@
+version: '2.2'
+services:
+  es:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.1.1
+    container_name: es
+    ports:
+      - 9200:9200
+    hostname: es
+    environment:
+      - discovery.type=single-node
+
+  kibana:
+    hostname: kibana
+    image: docker.elastic.co/kibana/kibana:7.0.1
+    volumes:
+      - ./kibana/kibana.yml:/usr/share/kibana/config/kibana.yml
+    environment:
+      SERVER_NAME: kibana
+      SERVER_HOST: '0.0.0.0'
+      ELASTICSEARCH_HOSTS: http://es:9200
+    ports:
+      - 5601:5601
+    depends_on:
+      - es
+
+  filebeat:
+    hostname: filebeat
+    image: docker.elastic.co/beats/filebeat:7.0.1
+    environment:
+      ELASTICSEARCH_HOSTS: http://logstash:9200
+    volumes:
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
+      - ../logs:/srv/logs
+    depends_on:
+      - es
+      - logstash
+
+  logstash:
+    hostname: logstash
+    image: docker.elastic.co/logstash/logstash:7.2.0
+    ports:
+      - 8088:8088
+    environment:
+      ELASTICSEARCH_HOSTS: http://es:9200
+      xpack.monitoring.enabled: "false"
+      setup.kibana.host: http://kibana:5601
+    volumes:
+      - ./logstash_pipelines/:/usr/share/logstash/pipeline/
+    depends_on:
+      - es

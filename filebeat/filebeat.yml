@@ -1,0 +1,18 @@
+filebeat.inputs:
+- type: log
+  paths:
+  - '/srv/logs/*.log'
+  multiline.pattern: '^\['
+  multiline.negate: true
+  multiline.match: after
+
+setup.kibana:
+  host: "kibana:5601"
+
+
+output.logstash:
+  hosts: ["logstash:8088"]
+
+processors:
+  - add_host_metadata: ~
+  - add_cloud_metadata: ~
